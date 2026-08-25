@@ -29,7 +29,7 @@ from pathlib import Path
 
 # Collections from oscana.constants making up the "keep" set for long-term
 # storage. See README.md in the oscana package for what each variable means
-# and which are dropped as reconstructable.
+# and which are redundant.
 DEFAULT_VARIABLES = [
     "IMAGE_ALL_VARIABLES",
     "MC_TRUTH_EVENT_VARIABLES",
@@ -98,11 +98,7 @@ n_events = len(dh.data)
 n_columns = len(dh.data.columns)
 
 dst.parent.mkdir(parents=True, exist_ok=True)
-dh.io.to_hdf5(
-    file=dst,
-    compression={compression!r},
-    drop_derived={drop_derived!r},
-)
+dh.io.to_hdf5(file=dst, compression={compression!r})
 
 verified = None
 if {verify!r}:
@@ -144,7 +140,6 @@ def convert_one(src: Path, dst: Path, args: argparse.Namespace) -> dict:
         dst=str(dst),
         variables=args.variables,
         compression=None if args.compression == "none" else args.compression,
-        drop_derived=not args.no_drop_derived,
         max_events=args.max_events,
         verify=args.verify,
     )
@@ -195,11 +190,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--compression", default="gzip", choices=("gzip", "lzf", "none"),
         help="HDF5 compression (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--no-drop-derived", action="store_true",
-        help="write stp.z / stp.planeview literally instead of rebuilding "
-             "them on load",
     )
     parser.add_argument(
         "--max-events", type=int, default=None,
@@ -254,8 +244,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"{len(sources)} file(s) under {args.input_dir}")
     print(f"variables: {', '.join(args.variables)}")
-    print(f"compression: {args.compression}, "
-          f"drop_derived: {not args.no_drop_derived}\n")
+    print(f"compression: {args.compression}\n")
 
     converted, skipped, failures = [], [], []
     bytes_in = bytes_out = 0

@@ -40,7 +40,7 @@ plus MC truth:
 
 | Collection | Contents |
 |------------|----------|
-| `IMAGE_ALL_VARIABLES` | digitised strip hits: plane, strip, view, z, pulse height, timing |
+| `IMAGE_ALL_VARIABLES` | digitised strip hits: plane, strip, view, pulse height, timing |
 | `MC_TRUTH_EVENT_VARIABLES` | per-event interaction truth (x, y, Q², W², channel, cross sections) |
 | `MC_INTERACTION_VARIABLES` | interaction type and neutrino flavour |
 | `MC_4MOMENTUM_VARIABLES` | truth 4-vectors |
@@ -50,12 +50,10 @@ Override with `--variables` (comma-separated collection names from
 `oscana.constants`). See `src/oscana/README.md` in the oscana checkout for
 what each variable means.
 
-Columns that are exact functions of another are left out and rebuilt on
-load — currently `stp.z` and `stp.planeview`, both derivable from
-`stp.plane`. Pass `--no-drop-derived` to write them literally. Either way
-the data you read back is identical; oscana verifies the mapping on the
-data being written and keeps the column if it does not hold, so files whose
-geometry differs are never silently corrupted.
+Everything requested is written out as-is. Some of it is redundant in
+principle — `stp.planeview` is a pure function of `stp.plane`, for
+instance — but oscana stores it rather than reconstructing it on load, and
+the README there records which fields those are and how they relate.
 
 Reading the result back:
 
@@ -75,7 +73,6 @@ dh.io.from_hdf5(files=["/archive/hdf5/2010/run1/f21….h5"])
 | `--pattern GLOB` | which files to pick up (default `**/*.root`) |
 | `--variables NAMES` | comma-separated oscana collections |
 | `--compression {gzip,lzf,none}` | default `gzip` |
-| `--no-drop-derived` | store derived columns literally |
 | `--max-events N` | keep only the first N events per file (testing) |
 | `--overwrite` | reconvert files whose output already exists |
 | `--verify` | reload each output and check the event count |
