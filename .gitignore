@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# oscana runtime
+logs/
+.env
+
+# Conversion output / local test trees
+*.h5
+*.root
+_test_tree/
+_test_out/
