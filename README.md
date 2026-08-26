@@ -49,6 +49,9 @@ plus MC truth:
 | `DETECTOR_STATE_VARIABLES` | magnet coil current, MIP→GeV calibration constant, HV status |
 | `DAQ_CONTEXT_VARIABLES` | beam spill, trigger and absolute timing (real data only; unset in MC) |
 | `VETO_SHIELD_VARIABLES` | raw veto shield hits |
+| `IMAGE_RAW_VARIABLES` | uncalibrated ADC — the signal before MINOS's calibration |
+| `MC_PARTICLE_LINEAGE_VARIABLES` | particle genealogy: the decay chain |
+| `MC_FLUX_VARIABLES` | gnumi beam provenance, and the per-detector flux weights |
 
 Override with `--variables` (comma-separated collection names from
 `oscana.constants`). See `src/oscana/README.md` in the oscana checkout for
@@ -63,6 +66,14 @@ Reconstruction output is deliberately absent: no tracks, showers, slices or
 clusters, and not the reconstructed vertex. The aim is to preserve what the
 experiment and the simulation recorded, so a future analysis can start from
 the data rather than inherit MINOS's own.
+
+That is also why the uncalibrated ADC is kept next to the calibrated pulse
+height. The conversion between them is per-strip and cannot be inverted, so
+an archive holding only the calibrated values could never be re-calibrated.
+With both, the factor is recoverable from the data. The same reasoning
+applies to the particle genealogy and the beam provenance: MINOS has
+finished and there will be no new simulations, so anything not archived is
+gone for good.
 
 Reading the result back:
 

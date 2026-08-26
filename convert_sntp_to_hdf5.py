@@ -42,6 +42,9 @@ DEFAULT_VARIABLES = [
     "DETECTOR_STATE_VARIABLES",
     "DAQ_CONTEXT_VARIABLES",
     "VETO_SHIELD_VARIABLES",
+    "IMAGE_RAW_VARIABLES",
+    "MC_PARTICLE_LINEAGE_VARIABLES",
+    "MC_FLUX_VARIABLES",
 ]
 
 # Runs in a fresh interpreter, one per input file.
