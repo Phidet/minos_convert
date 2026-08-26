@@ -45,6 +45,10 @@ plus MC truth:
 | `MC_INTERACTION_VARIABLES` | interaction type and neutrino flavour |
 | `MC_4MOMENTUM_VARIABLES` | truth 4-vectors |
 | `MC_PARTICLE_VARIABLES` | the `stdhep` truth particle stack |
+| `MC_STRIP_TRUTH_VARIABLES` | per-hit truth: which particles lit each strip, and by how much |
+| `DETECTOR_STATE_VARIABLES` | magnet coil current, MIP→GeV calibration constant, HV status |
+| `DAQ_CONTEXT_VARIABLES` | beam spill, trigger and absolute timing (real data only; unset in MC) |
+| `VETO_SHIELD_VARIABLES` | raw veto shield hits |
 
 Override with `--variables` (comma-separated collection names from
 `oscana.constants`). See `src/oscana/README.md` in the oscana checkout for
@@ -54,6 +58,11 @@ Everything requested is written out as-is. Some of it is redundant in
 principle — `stp.planeview` is a pure function of `stp.plane`, for
 instance — but oscana stores it rather than reconstructing it on load, and
 the README there records which fields those are and how they relate.
+
+Reconstruction output is deliberately absent: no tracks, showers, slices or
+clusters, and not the reconstructed vertex. The aim is to preserve what the
+experiment and the simulation recorded, so a future analysis can start from
+the data rather than inherit MINOS's own.
 
 Reading the result back:
 
@@ -77,6 +86,8 @@ dh.io.from_hdf5(files=["/archive/hdf5/2010/run1/f21….h5"])
 | `--overwrite` | reconvert files whose output already exists |
 | `--verify` | reload each output and check the event count |
 | `--dry-run` | list planned work and stop |
+| `--no-check-exclusions` | skip the checks described below |
+| `--check-events N` | events to sample for those checks (default 5000) |
 | `--oscana-src PATH` | oscana's `src/` (default `../oscana/src`) |
 
 ## Behaviour worth knowing
@@ -94,6 +105,15 @@ length.
 **One bad file does not stop the batch.** Failures are collected and printed
 at the end with the tail of their error, and the exit status is non-zero, so
 it composes in a pipeline.
+
+**Excluded branches are checked, not assumed.** Some branches are dropped
+because of a claim about their contents — that they are empty, a constant
+sentinel, or an exact copy of something kept. Before converting, each file
+is tested against those claims (`check_exclusions.py`), and refused if any
+fails. Without that, a file where `digihit` was actually populated, or where
+`mc.p4neu` did not match the truth particle table, would be silently
+stripped of real data. The reconstruction chain is not checked: it is
+dropped by policy, so there is no claim to test.
 
 **Real data vs simulation.** The default set includes `mc.*`. Real-data
 files carry those branches zero-filled, so they convert without complaint.

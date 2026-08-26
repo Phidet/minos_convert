@@ -27,6 +27,8 @@ import sys
 import time
 from pathlib import Path
 
+from check_exclusions import check_file
+
 # Collections from oscana.constants making up the "keep" set for long-term
 # storage. See README.md in the oscana package for what each variable means
 # and which are redundant.
@@ -36,6 +38,10 @@ DEFAULT_VARIABLES = [
     "MC_INTERACTION_VARIABLES",
     "MC_4MOMENTUM_VARIABLES",
     "MC_PARTICLE_VARIABLES",
+    "MC_STRIP_TRUTH_VARIABLES",
+    "DETECTOR_STATE_VARIABLES",
+    "DAQ_CONTEXT_VARIABLES",
+    "VETO_SHIELD_VARIABLES",
 ]
 
 # Runs in a fresh interpreter, one per input file.
@@ -208,6 +214,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="list what would be done, then stop",
     )
     parser.add_argument(
+        "--no-check-exclusions", action="store_true",
+        help="skip the checks that the dropped branches really are empty, "
+             "constant, or duplicated elsewhere",
+    )
+    parser.add_argument(
+        "--check-events", type=int, default=5000,
+        help="events to sample for those checks (default: %(default)s)",
+    )
+    parser.add_argument(
         "--oscana-src", type=Path,
         default=Path(__file__).resolve().parent.parent / "oscana" / "src",
         help="path to oscana's src/ (default: %(default)s)",
@@ -263,6 +278,18 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         print(f"{label}", flush=True)
+
+        if not args.no_check_exclusions:
+            broken = check_file(src, check_events=args.check_events)
+            if broken:
+                print(f"    REFUSED: {len(broken)} assumption(s) about "
+                      "excluded branches do not hold for this file")
+                for message in broken:
+                    print(f"      - {message}")
+                failures.append((src, {"error": "exclusion checks failed",
+                                       "stderr": "\n".join(broken)}))
+                continue
+
         result = convert_one(src, dst, args)
 
         if not result["ok"]:
