@@ -6,13 +6,6 @@ and writes the result to the same relative location under OUTPUT_DIR.
 
     convert_sntp_to_hdf5.py /data/sntp /archive/hdf5
 
-Each file is converted in a separate process. That is deliberate: one file
-needs roughly 1.2 GB resident, and Python does not reliably return that to
-the operating system between iterations, so a long in-process loop creeps
-upwards until it is killed. A subprocess always gives the memory back. The
-cost is a couple of seconds of interpreter startup per file, against a
-conversion measured in minutes.
-
 Interrupted runs resume: a file whose output already exists is skipped
 unless --overwrite. A file that fails does not stop the batch; failures are
 collected and reported at the end, and the exit status is non-zero.
@@ -49,24 +42,30 @@ DEFAULT_VARIABLES = [
 
 # Runs in a fresh interpreter, one per input file.
 #
-# Two things here are not obvious, and both come from how oscana expects to
-# be set up rather than from anything we want:
+# The scratch directory exists to satisfy three assumptions oscana makes
+# about being driven by hand from a project directory. None of them are
+# needed by the conversion itself:
 #
-#   * `from_sntp` resolves its argument through the environment, not the
-#     filesystem -- `_get_dir_from_env` does `os.environ.get(name)` and
-#     errors if the name is absent. There is no path fallback, so we put the
-#     path into the environment under a synthetic key and hand over the key.
+#   * `oscana.init()` opens its log files without creating the directory
+#     first, so `logs/` has to exist beforehand.
 #
-#   * `oscana.init()` refuses to start without a .env file it can find and a
-#     logs directory that already exists, and python-dotenv only searches
-#     from the working directory when it believes it is interactive (hence
-#     setting sys.ps1). So the worker builds a scratch directory holding
-#     both and works from there. Output still goes to the real destination.
+#   * `init_env_variables()` calls `dotenv.load_dotenv()` with no arguments
+#     and errors if it finds no file -- even when the variables are already
+#     set, since it checks for a *file* rather than for the values. So a
+#     .env has to exist somewhere dotenv will look, which is the working
+#     directory (python -c leaves `__main__.__file__` unset, and dotenv
+#     treats that as interactive, so it searches the cwd).
+#
+#   * `from_sntp` takes an environment variable *name*, not a path:
+#     `_get_dir_from_env` does `os.environ.get(name)` with no path
+#     fallback. Hence the synthetic key.
+#
+# Output goes to an absolute path, so the chdir does not affect it. A path
+# fallback in `_get_dir_from_env` upstream would remove most of this.
 WORKER = r'''
 import os, sys, tempfile, json
 from pathlib import Path
 
-sys.ps1 = ">>> "                       # make python-dotenv search from cwd
 sys.path.insert(0, {oscana_src!r})
 
 src, dst = Path({src!r}), Path({dst!r})

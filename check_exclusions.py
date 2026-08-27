@@ -3,26 +3,12 @@
 
 The archive drops some branches because of a claim about their *contents* --
 that they are empty, or a constant sentinel, or an exact copy of something
-we do keep. Those claims were checked against one Monte Carlo file. Nothing
-would otherwise notice if another file broke them, and the failure mode is
-the bad one: real data discarded silently, with no error.
+we do keep.
 
-Every such claim is declared in ASSUMPTIONS below, so adding an exclusion
-means adding a line here too. A claim that fails stops the file being
-converted.
+Every such claim is declared in ASSUMPTIONS below. A claim that fails stops the file being
+converted. This does not test branches that are dropped as a policy choice (e.g. the old reconstruction branches).
 
-This deliberately says nothing about the reconstruction chain (trk, shw,
-slc, clu, evt, th{evt,trk,shw,slc}, ...). Those are dropped as a policy
-choice -- keep the experiment's data, not its reconstruction -- not because
-of anything measurable, so there is no assumption to test.
-
-The redundancy rules are ported from minos_data_storage's
-validate_redundancy.py, where they were checked event-by-event against a
-real file. They are not re-derived here: SCHEMA.md records that a
-hand-derived version of the lepton rule looked right on a sample and was
-wrong in general.
-
-    python check_exclusions.py FILE.sntp.root [--check-events N]
+python check_exclusions.py FILE.sntp.root [--check-events N]
 """
 
 from __future__ import annotations
